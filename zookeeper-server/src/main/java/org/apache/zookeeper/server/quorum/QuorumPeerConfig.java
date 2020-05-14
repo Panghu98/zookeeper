@@ -141,6 +141,7 @@ public class QuorumPeerConfig {
                         + " file is missing");
             }
 
+            //将文件转换成流
             Properties cfg = new Properties();
             FileInputStream in = new FileInputStream(configFile);
             try {
@@ -149,6 +150,7 @@ public class QuorumPeerConfig {
                 in.close();
             }
 
+            // 真正处理文件逻辑判断的
             parseProperties(cfg);
         } catch (IOException e) {
             throw new ConfigException("Error processing " + path, e);
@@ -209,6 +211,9 @@ public class QuorumPeerConfig {
                 snapRetainCount = Integer.parseInt(value);
             } else if (key.equals("autopurge.purgeInterval")) {
                 purgeInterval = Integer.parseInt(value);
+
+
+            // 集群判断
             } else if (key.startsWith("server.")) {
                 int dot = key.indexOf('.');
                 long sid = Long.parseLong(key.substring(dot + 1));

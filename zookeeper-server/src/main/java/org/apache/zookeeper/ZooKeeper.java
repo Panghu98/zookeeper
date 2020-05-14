@@ -38,21 +38,31 @@ import java.net.SocketAddress;
 import java.util.*;
 
 /**
+ *  客户端函数库
  * This is the main class of ZooKeeper client library. To use a ZooKeeper
  * service, an application must first instantiate an object of ZooKeeper class.
  * All the iterations will be done by calling the methods of ZooKeeper class.
  * The methods of this class are thread-safe unless otherwise noted.
  * <p>
  * Once a connection to a server is established, a session ID is assigned to the
- * client. The client will send heart beats to the server periodically to keep
+ * client. The client will send heart beats to the server periodically（定期的） to keep
  * the session valid.
+ *
+ * 连接创建 -> 客户端被分配SessionID
+ *
+ * 客户端将会通过定期的发送心跳来保持session可用
+ *
  * <p>
  * The application can call ZooKeeper APIs through a client as long as the
  * session ID of the client remains valid.
+ *
+ *  客户端通过调用命令来保持Session ID的可用
  * <p>
  * If for some reason, the client fails to send heart beats to the server for a
- * prolonged period of time (exceeding the sessionTimeout value, for instance),
- * the server will expire the session, and the session ID will become invalid.
+ * prolonged period of time (exceeding the sessionTimeout value【session 超时时间】
+ * , for instance),
+ * the server will expire（过期） the session, and the session ID will become invalid.
+ * 【不可用】
  * The client object will no longer be usable. To make ZooKeeper API calls, the
  * application must create a new client object.
  * <p>
@@ -60,9 +70,13 @@ import java.util.*;
  * does not respond, the client will automatically try to connect to another
  * server before its session ID expires. If successful, the application can
  * continue to use the client.
+ *
+ *  舍弃了可用性，这里会阻塞
+ *
  * <p>
  * The ZooKeeper API methods are either synchronous or asynchronous. Synchronous
- * methods blocks until the server has responded. Asynchronous methods just queue
+ * methods blocks until the server has responded【发送请求会阻塞式的获取结果】
+ * . Asynchronous methods just queue
  * the request for sending and return immediately. They take a callback object that
  * will be executed either on successful execution of the request or on error with
  * an appropriate return code (rc) indicating the error.
@@ -83,6 +97,10 @@ import java.util.*;
  * the event handler a connection has been dropped. This special event has
  * EventType None and KeeperState Disconnected.
  *
+ *  客户端和服务端的会话创建成功之后将会被分配一个session ID，并且通过发送心跳的方式【Client】
+ *  来保持session ID的可用性
+ *
+ *  Zookeeper调用ClientCnxn.submitRequest方法将Request包装成Packet并添加到outgoingQueue队列中
  */
 @InterfaceAudience.Public
 public class ZooKeeper {
@@ -442,15 +460,22 @@ public class ZooKeeper {
         LOG.info("Initiating client connection, connectString=" + connectString
                 + " sessionTimeout=" + sessionTimeout + " watcher=" + watcher);
 
+        // 设置watcher
         watchManager.defaultWatcher = watcher;
 
+        // 包装地址
         ConnectStringParser connectStringParser = new ConnectStringParser(
                 connectString);
         HostProvider hostProvider = new StaticHostProvider(
                 connectStringParser.getServerAddresses());
+
+
+        // 客户端上下文
         cnxn = createConnection(connectStringParser.getChrootPath(),
                 hostProvider, sessionTimeout, this, watchManager,
+
                 getClientCnxnSocket(), canBeReadOnly);
+        // 启动在Client上下文中创建的两个线程
         cnxn.start();
     }
 
@@ -459,6 +484,7 @@ public class ZooKeeper {
             HostProvider hostProvider, int sessionTimeout, ZooKeeper zooKeeper,
             ClientWatchManager watcher, ClientCnxnSocket clientCnxnSocket,
             boolean canBeReadOnly) throws IOException {
+        // 上下文实例化
         return new ClientCnxn(chrootPath, hostProvider, sessionTimeout, this,
                 watchManager, clientCnxnSocket, canBeReadOnly);
     }
@@ -780,10 +806,12 @@ public class ZooKeeper {
         throws KeeperException, InterruptedException
     {
         final String clientPath = path;
+        // 验证path并且判断是不是顺序节点
         PathUtils.validatePath(clientPath, createMode.isSequential());
 
         final String serverPath = prependChroot(clientPath);
 
+        // 构建请求头
         RequestHeader h = new RequestHeader();
         h.setType(ZooDefs.OpCode.create);
         CreateRequest request = new CreateRequest();
@@ -795,7 +823,11 @@ public class ZooKeeper {
             throw new KeeperException.InvalidACLException();
         }
         request.setAcl(acl);
+
+
+        // 提交请求，通过Socket进行请求传输
         ReplyHeader r = cnxn.submitRequest(h, request, response, null);
+        // ReplyHeader响应头部
         if (r.getErr() != 0) {
             throw KeeperException.create(KeeperException.Code.get(r.getErr()),
                     clientPath);
@@ -821,6 +853,7 @@ public class ZooKeeper {
 
         final String serverPath = prependChroot(clientPath);
 
+        // 请求头
         RequestHeader h = new RequestHeader();
         h.setType(ZooDefs.OpCode.create);
         CreateRequest request = new CreateRequest();
@@ -1850,6 +1883,7 @@ public class ZooKeeper {
         String clientCnxnSocketName = System
                 .getProperty(ZOOKEEPER_CLIENT_CNXN_SOCKET);
         if (clientCnxnSocketName == null) {
+            // 使用客户端和服务器端的NIO传输层
             clientCnxnSocketName = ClientCnxnSocketNIO.class.getName();
         }
         try {

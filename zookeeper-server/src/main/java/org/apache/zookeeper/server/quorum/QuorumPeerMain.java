@@ -63,7 +63,7 @@ import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
  *
  */
 @InterfaceAudience.Public
-public class QuorumPeerMain {
+public class  QuorumPeerMain {
     private static final Logger LOG = LoggerFactory.getLogger(QuorumPeerMain.class);
 
     private static final String USAGE = "Usage: QuorumPeerMain configfile";
@@ -110,12 +110,14 @@ public class QuorumPeerMain {
                 .getSnapRetainCount(), config.getPurgeInterval());
         purgeMgr.start();
 
+        // 判断是集群还是单机
         if (args.length == 1 && config.servers.size() > 0) {
             runFromConfig(config);
         } else {
             LOG.warn("Either no config or no quorum defined in config, running "
                     + " in standalone mode");
             // there is only server in the quorum -- run as standalone
+            // 单机模式启动类
             ZooKeeperServerMain.main(args);
         }
     }

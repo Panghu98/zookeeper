@@ -47,6 +47,11 @@ import java.util.regex.Pattern;
 /**
  * The command line client to ZooKeeper.
  *
+ * ZookeeperMain主要用两个作用
+ *  1.接收来自客户端的请求
+ *  2.将客户端的命令转换为Request
+ *
+ *
  */
 @InterfaceAudience.Public
 public class ZooKeeperMain {
@@ -279,6 +284,7 @@ public class ZooKeeperMain {
         }
         host = newHost;
         boolean readOnly = cl.getOption("readonly") != null;
+        // 创建zk
         zk = new ZooKeeper(host,
                  Integer.parseInt(cl.getOption("timeout")),
                  new MyWatcher(), readOnly);
@@ -288,15 +294,17 @@ public class ZooKeeperMain {
         throws KeeperException, IOException, InterruptedException
     {
         ZooKeeperMain main = new ZooKeeperMain(args);
+        //
         main.run();
     }
 
     public ZooKeeperMain(String args[]) throws IOException, InterruptedException {
         cl.parseOptions(args);
         System.out.println("Connecting to " + cl.getOption("server"));
+        // 连接zk
         connectToZK(cl.getOption("server"));
-        //zk = new ZooKeeper(cl.getOption("server"),
-//                Integer.parseInt(cl.getOption("timeout")), new MyWatcher());
+        zk = new ZooKeeper(cl.getOption("server"),
+                Integer.parseInt(cl.getOption("timeout")), new MyWatcher());
     }
 
     public ZooKeeperMain(ZooKeeper zk) {
@@ -311,7 +319,9 @@ public class ZooKeeperMain {
             boolean jlinemissing = false;
             // only use jline if it's in the classpath
             try {
+                // Java命令行的启动类
                 Class<?> consoleC = Class.forName("jline.ConsoleReader");
+                // 一样的
                 Class<?> completorC =
                     Class.forName("org.apache.zookeeper.JLineZNodeCompletor");
 
@@ -328,7 +338,10 @@ public class ZooKeeperMain {
 
                 String line;
                 Method readLine = consoleC.getMethod("readLine", String.class);
+
+                // getPrompt获取提示，也就是命令行前面的连接地址和次数的提示
                 while ((line = (String)readLine.invoke(console, getPrompt())) != null) {
+                    // 执行命令行的输入
                     executeLine(line);
                 }
             } catch (ClassNotFoundException e) {
@@ -369,6 +382,8 @@ public class ZooKeeperMain {
       if (!line.equals("")) {
         cl.parseCommand(line);
         addToHistory(commandCount,line);
+
+        // 真正用于处理命令
         processCmd(cl);
         commandCount++;
       }
@@ -597,6 +612,7 @@ public class ZooKeeperMain {
         throws KeeperException, IOException, InterruptedException
     {
         try {
+            // 真正的梳理逻辑的方法
             return processZKCmd(co);
         } catch (IllegalArgumentException e) {
             System.err.println("Command failed: " + e);
@@ -701,11 +717,14 @@ public class ZooKeeperMain {
                 flags = CreateMode.PERSISTENT_SEQUENTIAL;
             }
             if (args.length == first + 4) {
+                // ACL处理
                 acl = parseACLs(args[first+3]);
             }
             path = args[first + 1];
+            // 调用客户端创建方法
             String newPath = zk.create(path, args[first+2].getBytes(), acl,
                     flags);
+            //
             System.err.println("Created " + newPath);
         } else if (cmd.equals("delete") && args.length >= 2) {
             path = args[1];

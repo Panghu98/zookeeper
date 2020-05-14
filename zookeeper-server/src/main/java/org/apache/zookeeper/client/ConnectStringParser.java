@@ -62,6 +62,7 @@ public final class ConnectStringParser {
             this.chrootPath = null;
         }
 
+        // 在集群的条件下存在多个ip+port，进行字符串处理
         String hostsList[] = connectString.split(",");
         for (String host : hostsList) {
             int port = DEFAULT_PORT;
@@ -73,6 +74,8 @@ public final class ConnectStringParser {
                 }
                 host = host.substring(0, pidx);
             }
+
+            // InetSocketAddress存储的其实就是套接字信息
             serverAddresses.add(InetSocketAddress.createUnresolved(host, port));
         }
     }

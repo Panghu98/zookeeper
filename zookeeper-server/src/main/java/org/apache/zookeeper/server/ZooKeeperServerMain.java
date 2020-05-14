@@ -52,6 +52,7 @@ public class ZooKeeperServerMain {
     public static void main(String[] args) {
         ZooKeeperServerMain main = new ZooKeeperServerMain();
         try {
+            // 执行
             main.initializeAndRun(args);
         } catch (IllegalArgumentException e) {
             LOG.error("Invalid arguments, exiting abnormally", e);
@@ -79,6 +80,7 @@ public class ZooKeeperServerMain {
             LOG.warn("Unable to register log4j JMX control", e);
         }
 
+        // 不同于QuorumPeerMainConfig
         ServerConfig config = new ServerConfig();
         if (args.length == 1) {
             config.parse(args[0]);
@@ -94,7 +96,7 @@ public class ZooKeeperServerMain {
      * @param config ServerConfig to use.
      * @throws IOException
      */
-    public void runFromConfig(ServerConfig config) throws IOException {
+    public void   runFromConfig(ServerConfig config) throws IOException {
         LOG.info("Starting server");
         FileTxnSnapLog txnLog = null;
         try {
@@ -116,7 +118,9 @@ public class ZooKeeperServerMain {
             zkServer.setTickTime(config.tickTime);
             zkServer.setMinSessionTimeout(config.minSessionTimeout);
             zkServer.setMaxSessionTimeout(config.maxSessionTimeout);
+            // 默认同样的是使用NIO服务器
             cnxnFactory = ServerCnxnFactory.createFactory();
+            // 建立Socket，默认是NIOServerCnxnFactory（是一个线程）
             cnxnFactory.configure(config.getClientPortAddress(),
                     config.getMaxClientCnxns());
             cnxnFactory.startup(zkServer);

@@ -398,6 +398,7 @@ public class ClientCnxn {
         readTimeout = sessionTimeout * 2 / 3;
         readOnly = canBeReadOnly;
 
+        // 初始化；两个线程
         sendThread = new SendThread(clientCnxnSocket);
         eventThread = new EventThread();
 
@@ -726,7 +727,7 @@ public class ClientCnxn {
      * This class services the outgoing request queue and generates the heart
      * beats. It also spawns the ReadThread.
      */
-    class SendThread extends ZooKeeperThread {
+    class SendThread extends ZooKeeperThread  {
         private long lastPingSentNs;
         private final ClientCnxnSocket clientCnxnSocket;
         private Random r = new Random(System.nanoTime());        
@@ -875,6 +876,10 @@ public class ClientCnxn {
             return clientCnxnSocket;
         }
 
+        /**
+         * 不管是连接是否完成都会调用这个方法
+         * @throws IOException
+         */
         void primeConnection() throws IOException {
             LOG.info("Socket connection established to "
                      + clientCnxnSocket.getRemoteSocketAddress()
@@ -944,6 +949,7 @@ public class ClientCnxn {
                             OpCode.auth), null, new AuthPacket(0, id.scheme,
                             id.data), null, null));
                 }
+                // 将ConnectionRequest加入OutgoingQueue
                 outgoingQueue.addFirst(new Packet(null, null, conReq,
                             null, null, readOnly));
             }
@@ -992,6 +998,7 @@ public class ClientCnxn {
         private void startConnect(InetSocketAddress addr) throws IOException {
             // initializing it for new connection
             saslLoginFailed = false;
+            // 修改状态
             state = States.CONNECTING;
 
             setName(getName().replaceAll("\\(.*\\)",
@@ -1012,8 +1019,11 @@ public class ClientCnxn {
                     saslLoginFailed = true;
                 }
             }
+            // 日志
             logStartConnect(addr);
 
+
+            // 使用NIO套接字进行连接
             clientCnxnSocket.connect(addr);
         }
 
@@ -1030,16 +1040,25 @@ public class ClientCnxn {
         
         @Override
         public void run() {
+            //上下文初始化的时候为clientCnxnSocket赋值，NIO懂？
             clientCnxnSocket.introduce(this,sessionId);
             clientCnxnSocket.updateNow();
             clientCnxnSocket.updateLastSendAndHeard();
             int to;
+
+
             long lastPingRwServer = Time.currentElapsedTime();
             final int MAX_SEND_PING_INTERVAL = 10000; //10 seconds
             InetSocketAddress serverAddress = null;
+
+            // volatile States state = States.NOT_CONNECTED;
+            // state初始状态是未连接，初始状态值也是isAlive()
+
+            // 循环重试，不成功就一直阻塞在这个位置
             while (state.isAlive()) {
                 try {
                     if (!clientCnxnSocket.isConnected()) {
+                        // 初始值为true
                         if(!isFirstConnect){
                             try {
                                 Thread.sleep(r.nextInt(1000));
@@ -1055,8 +1074,11 @@ public class ClientCnxn {
                             serverAddress = rwServerAddress;
                             rwServerAddress = null;
                         } else {
+                            // 取出一个地址
                             serverAddress = hostProvider.next(1000);
                         }
+
+                        // 进行socket连接
                         startConnect(serverAddress);
                         clientCnxnSocket.updateLastSendAndHeard();
                     }
@@ -1115,6 +1137,8 @@ public class ClientCnxn {
                         		((clientCnxnSocket.getIdleSend() > 1000) ? 1000 : 0);
                         //send a ping request either time is due or no packet sent out within MAX_SEND_PING_INTERVAL
                         if (timeToNextPing <= 0 || clientCnxnSocket.getIdleSend() > MAX_SEND_PING_INTERVAL) {
+
+                            // 发送ping
                             sendPing();
                             clientCnxnSocket.updateLastSend();
                         } else {
@@ -1138,6 +1162,7 @@ public class ClientCnxn {
                         to = Math.min(to, pingRwTimeout - idlePingRwServer);
                     }
 
+                    // 进行数据传输
                     clientCnxnSocket.doTransport(to, pendingQueue, outgoingQueue, ClientCnxn.this);
                 } catch (Throwable e) {
                     if (closing) {
@@ -1274,6 +1299,7 @@ public class ClientCnxn {
             if (negotiatedSessionTimeout <= 0) {
                 state = States.CLOSED;
 
+                // 连接成功，触发Event=NONE的事件
                 eventThread.queueEvent(new WatchedEvent(
                         Watcher.Event.EventType.None,
                         Watcher.Event.KeeperState.Expired, null));

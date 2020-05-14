@@ -128,6 +128,7 @@ abstract class ClientCnxnSocket {
         ByteBufferInputStream bbis = new ByteBufferInputStream(incomingBuffer);
         BinaryInputArchive bbia = BinaryInputArchive.getArchive(bbis);
         ConnectResponse conRsp = new ConnectResponse();
+        //反序列化
         conRsp.deserialize(bbia, "connect");
 
         // read "is read-only" flag
@@ -141,6 +142,8 @@ abstract class ClientCnxnSocket {
         }
 
         this.sessionId = conRsp.getSessionId();
+
+        //
         sendThread.onConnected(conRsp.getTimeOut(), this.sessionId,
                 conRsp.getPasswd(), isRO);
     }

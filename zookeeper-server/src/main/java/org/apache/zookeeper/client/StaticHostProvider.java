@@ -71,6 +71,7 @@ public final class StaticHostProvider implements HostProvider {
                 return InetAddress.getAllByName(name);
             }
         };
+        // 打乱地址，随机获取
         init(serverAddresses);
     }
 
