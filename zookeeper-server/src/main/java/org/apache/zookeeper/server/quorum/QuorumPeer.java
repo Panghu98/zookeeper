@@ -632,9 +632,11 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
     }
     
     @Override
-    public synchronized void start() {
+    public synchronized void   start() {
+        // 事务持久化
         loadDataBase();
-        cnxnFactory.start();        
+        cnxnFactory.start();
+        // 领导者选举
         startLeaderElection();
         super.start();
     }
@@ -874,6 +876,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
 
         LOG.debug("Starting quorum peer");
         try {
+            // Java Management Extensions
             jmxQuorumBean = new QuorumBean(this);
             MBeanRegistry.getInstance().register(jmxQuorumBean, null);
             for(QuorumServer s: getView().values()){
@@ -905,7 +908,9 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
              * Main loop
              */
             while (running) {
+                //  LOOKING, FOLLOWING, LEADING, OBSERVING;
                 switch (getPeerState()) {
+                // 还没确定角色，也就是正在进行领导者选举
                 case LOOKING:
                     LOG.info("LOOKING");
 
@@ -962,6 +967,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
                         }
                     }
                     break;
+                // 服务器是观察者的类型，现在正处于观察的状态
                 case OBSERVING:
                     try {
                         LOG.info("OBSERVING");
@@ -975,6 +981,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
                         setPeerState(ServerState.LOOKING);
                     }
                     break;
+                // 跟随者，跟随状态
                 case FOLLOWING:
                     try {
                         LOG.info("FOLLOWING");
@@ -988,10 +995,14 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
                         setPeerState(ServerState.LOOKING);
                     }
                     break;
+                // 领导者
                 case LEADING:
                     LOG.info("LEADING");
                     try {
+                        // 创建并返回一个Leader类
                         setLeader(makeLeader(logFactory));
+
+                        // 核心方法
                         leader.lead();
                         setLeader(null);
                     } catch (Exception e) {

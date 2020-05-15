@@ -119,6 +119,7 @@ public class  QuorumPeerMain {
 
         // 判断是集群还是单机
         if (args.length == 1 && config.servers.size() > 0) {
+            // 集群启动
             runFromConfig(config);
         } else {
             LOG.warn("Either no config or no quorum defined in config, running "
@@ -144,6 +145,7 @@ public class  QuorumPeerMain {
           cnxnFactory.configure(config.getClientPortAddress(),
                                 config.getMaxClientCnxns());
 
+          // new 一个 QuorumPeer
           quorumPeer = getQuorumPeer();
 
           quorumPeer.setQuorumPeers(config.getServers());
@@ -178,6 +180,7 @@ public class  QuorumPeerMain {
           quorumPeer.setQuorumCnxnThreadsSize(config.quorumCnxnThreadsSize);
           quorumPeer.initialize();
 
+          // 集群节点启动
           quorumPeer.start();
           quorumPeer.join();
       } catch (InterruptedException e) {

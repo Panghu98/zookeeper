@@ -325,6 +325,7 @@ public class Leader {
             try {
                 while (!stop) {
                     try{
+                        // 创建socket连接
                         Socket s = ss.accept();
                         // start with the initLimit, once the ack is processed
                         // in LearnerHandler switch to the syncLimit
@@ -333,6 +334,7 @@ public class Leader {
 
                         BufferedInputStream is = new BufferedInputStream(
                                 s.getInputStream());
+                        // 也是一个线程，有一个socket连接就会创建一个线程
                         LearnerHandler fh = new LearnerHandler(s, is, Leader.this);
                         fh.start();
                     } catch (SocketException e) {
@@ -391,6 +393,9 @@ public class Leader {
 
             // Start thread that waits for connection requests from 
             // new followers.
+
+
+            // 这是一个线程，开启socket
             cnxAcceptor = new LearnerCnxAcceptor();
             cnxAcceptor.start();
             

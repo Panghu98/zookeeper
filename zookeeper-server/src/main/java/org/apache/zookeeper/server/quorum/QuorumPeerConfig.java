@@ -200,6 +200,8 @@ public class QuorumPeerConfig {
             } else if (key.equals("quorumListenOnAllIPs")) {
                 quorumListenOnAllIPs = Boolean.parseBoolean(value);
             } else if (key.equals("peerType")) {
+
+                // 节点服务器的角色，默认是follower
                 if (value.toLowerCase().equals("observer")) {
                     peerType = LearnerType.OBSERVER;
                 } else if (value.toLowerCase().equals("participant")) {
@@ -217,6 +219,7 @@ public class QuorumPeerConfig {
 
 
             // 集群判断
+
             } else if (key.startsWith("server.")) {
                 int dot = key.indexOf('.');
                 long sid = Long.parseLong(key.substring(dot + 1));
@@ -234,6 +237,7 @@ public class QuorumPeerConfig {
                 	electionPort=Integer.parseInt(parts[2]);
                 }
                 if (parts.length > 3){
+                    // part[3]指的是节点类型，也就是peertype
                     if (parts[3].toLowerCase().equals("observer")) {
                         type = LearnerType.OBSERVER;
                     } else if (parts[3].toLowerCase().equals("participant")) {
@@ -404,11 +408,16 @@ public class QuorumPeerConfig {
                  */
 
                 LOG.info("Defaulting to majority quorums");
+
+                // 过半机制验证，注意这里取得是servers，并没有加入observer
+                // 所以启动的时候也要求，必须过半才能够正常的启动
                 quorumVerifier = new QuorumMaj(servers.size());
             }
 
             // Now add observers to servers, once the quorums have been
             // figured out
+
+            // 这时候的servers才包括所有的服务器
             servers.putAll(observers);
 
             File myIdFile = new File(dataDir, "myid");
@@ -424,6 +433,7 @@ public class QuorumPeerConfig {
                 br.close();
             }
             try {
+                // 将server.id设置为myid
                 serverId = Long.parseLong(myIdString);
                 MDC.put("myid", myIdString);
             } catch (NumberFormatException e) {
@@ -432,13 +442,16 @@ public class QuorumPeerConfig {
             }
             
             // Warn about inconsistent peer type
+
+            // 比那里判断follower,通过id判断，建议写上peertype,在么个配置文件之上
             LearnerType roleByServersList = observers.containsKey(serverId) ? LearnerType.OBSERVER
                     : LearnerType.PARTICIPANT;
             if (roleByServersList != peerType) {
                 LOG.warn("Peer type from servers list (" + roleByServersList
                         + ") doesn't match peerType (" + peerType
                         + "). Defaulting to servers list.");
-    
+
+                //
                 peerType = roleByServersList;
             }
         }
