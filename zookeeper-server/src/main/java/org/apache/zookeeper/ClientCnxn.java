@@ -502,10 +502,13 @@ public class ClientCnxn {
            try {
               isRunning = true;
               while (true) {
+                 // 取出事件
                  Object event = waitingEvents.take();
                  if (event == eventOfDeath) {
                     wasKilled = true;
                  } else {
+
+                     // 进行事件处理
                     processEvent(event);
                  }
                  if (wasKilled)
@@ -1080,6 +1083,7 @@ public class ClientCnxn {
 
                         // 进行socket连接
                         startConnect(serverAddress);
+
                         clientCnxnSocket.updateLastSendAndHeard();
                     }
 
@@ -1164,6 +1168,7 @@ public class ClientCnxn {
 
                     // 进行数据传输
                     clientCnxnSocket.doTransport(to, pendingQueue, outgoingQueue, ClientCnxn.this);
+
                 } catch (Throwable e) {
                     if (closing) {
                         if (LOG.isDebugEnabled()) {

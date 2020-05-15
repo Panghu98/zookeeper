@@ -61,6 +61,9 @@ import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
  * In addition to the config file. There is a file in the data directory called
  * "myid" that contains the server id as an ASCII decimal value.
  *
+ * 1.解析配置
+ * 2.根据配置进行单机或集群模式的启动(判断条件就是配置文件中的servers的数量)
+ *
  */
 @InterfaceAudience.Public
 public class  QuorumPeerMain {
@@ -73,11 +76,15 @@ public class  QuorumPeerMain {
     /**
      * To start the replicated server specify the configuration file name on
      * the command line.
+     *  处理配置文件，并将配置信息存储到QuorumPeerConfig
+     * {@link QuorumPeerConfig}
+     *
      * @param args path to the configfile
      */
     public static void main(String[] args) {
         QuorumPeerMain main = new QuorumPeerMain();
         try {
+            // 用于处理配置文件，并将配置信息存储到 QuorumPeerConfig
             main.initializeAndRun(args);
         } catch (IllegalArgumentException e) {
             LOG.error("Invalid arguments, exiting abnormally", e);
@@ -131,6 +138,8 @@ public class  QuorumPeerMain {
   
       LOG.info("Starting quorum peer");
       try {
+
+          // 创建上下文工厂，默认为 NIOServerCnxnFactory，也可以设置为Netty
           ServerCnxnFactory cnxnFactory = ServerCnxnFactory.createFactory();
           cnxnFactory.configure(config.getClientPortAddress(),
                                 config.getMaxClientCnxns());

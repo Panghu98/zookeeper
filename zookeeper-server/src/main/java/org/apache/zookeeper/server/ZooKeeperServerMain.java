@@ -88,6 +88,7 @@ public class ZooKeeperServerMain {
             config.parse(args);
         }
 
+        // 之前的步骤主要是对配置的解析
         runFromConfig(config);
     }
 
@@ -111,8 +112,13 @@ public class ZooKeeperServerMain {
             zkServer.registerServerShutdownHandler(
                     new ZooKeeperServerShutdownHandler(shutdownLatch));
 
+            // FileTxnSnapLog - 事务日志和快照持久化工具类
+            //1. TxnLog-事务日志
+            //2. SnapShot-快照 日志
             txnLog = new FileTxnSnapLog(new File(config.dataLogDir), new File(
                     config.dataDir));
+
+
             txnLog.setServerStats(zkServer.serverStats());
             zkServer.setTxnLogFactory(txnLog);
             zkServer.setTickTime(config.tickTime);
@@ -123,6 +129,7 @@ public class ZooKeeperServerMain {
             // 建立Socket，默认是NIOServerCnxnFactory（是一个线程）
             cnxnFactory.configure(config.getClientPortAddress(),
                     config.getMaxClientCnxns());
+
             cnxnFactory.startup(zkServer);
             // Watch status of ZooKeeper server. It will do a graceful shutdown
             // if the server is not running or hits an internal error.

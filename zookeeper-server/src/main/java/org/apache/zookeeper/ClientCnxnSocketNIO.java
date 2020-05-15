@@ -287,7 +287,7 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
         sockKey = sock.register(selector, SelectionKey.OP_CONNECT);
         boolean immediateConnect = sock.connect(addr);
         if (immediateConnect) {
-            // 主要连接
+            // 主要连接,将Packet放入outgoingQueue
             sendThread.primeConnection();
         }
     }
@@ -297,7 +297,7 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
         // 创建Socket
         SocketChannel sock = createSock();
         try {
-            // 注册和连接
+            // 注册和连接,将Packet放入outgoingQueue
            registerAndConnect(sock, addr);
         } catch (IOException e) {
             LOG.error("Unable to open socket to " + addr);

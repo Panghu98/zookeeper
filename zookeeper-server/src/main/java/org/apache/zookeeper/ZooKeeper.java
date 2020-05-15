@@ -77,19 +77,24 @@ import java.util.*;
  * The ZooKeeper API methods are either synchronous or asynchronous. Synchronous
  * methods blocks until the server has responded【发送请求会阻塞式的获取结果】
  * . Asynchronous methods just queue
- * the request for sending and return immediately. They take a callback object that
+ * the request for sending and return immediately.
+ * They take a callback object that 【异步 - 回调
+ * 】
  * will be executed either on successful execution of the request or on error with
  * an appropriate return code (rc) indicating the error.
  * <p>
- * Some successful ZooKeeper API calls can leave watches on the "data nodes" in
- * the ZooKeeper server. Other successful ZooKeeper API calls can trigger those
+ * Some successful ZooKeeper API calls can leave <u>watches</u> on the "data nodes" in
+ * the ZooKeeper server. Other successful ZooKeeper API calls can <u>trigger</u> those
  * watches. Once a watch is triggered, an event will be delivered to the client
- * which left the watch at the first place. Each watch can be triggered only
- * once. Thus, up to one event will be delivered to a client for every watch it
+ * which left the watch at the first place. <b>Each watch can be triggered only
+ * once</b>. Thus, up to one event will be delivered to a client for every watch it
  * leaves.
  * <p>
  * A client needs an object of a class implementing Watcher interface for
  * processing the events delivered to the client.
+ *
+ *  需要Watcher的实现类来处理被指派给客户端的事件
+ *
  *
  * When a client drops the current connection and re-connects to a server, all the
  * existing watches are considered as being triggered but the undelivered events
@@ -256,6 +261,8 @@ public class ZooKeeper {
     abstract class WatchRegistration {
         private Watcher watcher;
         private String clientPath;
+
+
         public WatchRegistration(Watcher watcher, String clientPath)
         {
             this.watcher = watcher;

@@ -290,7 +290,7 @@ public class ZooKeeperMain {
                  new MyWatcher(), readOnly);
     }
     
-    public static void main(String args[])
+    public static void main(String[] args)
         throws KeeperException, IOException, InterruptedException
     {
         ZooKeeperMain main = new ZooKeeperMain(args);
@@ -298,7 +298,7 @@ public class ZooKeeperMain {
         main.run();
     }
 
-    public ZooKeeperMain(String args[]) throws IOException, InterruptedException {
+    public ZooKeeperMain(String[] args) throws IOException, InterruptedException {
         cl.parseOptions(args);
         System.out.println("Connecting to " + cl.getOption("server"));
         // 连接zk
